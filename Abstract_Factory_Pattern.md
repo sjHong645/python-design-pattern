@@ -81,7 +81,7 @@ print(animal_speaker(Cat))  # "Meow!"
 Python에서는 클래스 또는 함수 자체를 전달할 수 있기 때문이다. 
 ```
 
-## 서론 
+## 내용
 
 Python 표준 라이브러리 `json 모듈`을 가지고 설명하겠다. 
 
@@ -114,7 +114,7 @@ cf) 루틴 : 함수, 메서드, 서브루틴 등에서 특정 작업을 수행�
 
 그래서 이러한 클래스를 `호출자`가 설정하게 함으로써 루틴 자체의 일반적인 특성을 유지하도록 할 수 있다. 
 
-## 1번째 접근 : Pythonic 접근
+## Pythonic 접근
 
 ``` python
 import json
@@ -151,6 +151,7 @@ class JSONDecoder:
     def __init__(self, *, parse_float=None, **kwargs):
         self.parse_float = parse_float or float # parse_float 인수가 제공되지 않으면
                                                 # 기본적으로 float 타입을 사용
+                                            
         # ...
 ```
 
@@ -164,3 +165,9 @@ def some_parsing_method(self, json_number_string):
 - float가 전달되었다면? float(json_number_string)의 반환값을 반환
 - Decimal이 전달되었다면? Decimal(json_number_string)의 반환값을 반환
 ```
+
+만약에 숫자를 parsing 하는 모든 부분에 parse_float와 같은 함수가 아니라 `float()`로 지정했다면... 
+
+주어진 json.loads()를 가지고는 숫자 값을 Decimal 형태로 바꿀 수 없고  
+Decimal로 파싱하는 새로운 JSONDecoder 클래스를 정의해야 했을 것이다. 
+
