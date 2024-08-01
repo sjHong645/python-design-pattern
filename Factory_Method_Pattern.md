@@ -178,8 +178,58 @@ conn.response_class = SpecialHTTPResponse # 원래는 conn에 저장된 인스�
 
 대원칙은 읽기 쉽고 유지보수하기 쉬운 패턴을 선택해야 한다. 
 
-- 객체 생성 방식을 개발자가 자주 customizing 한다면 => 
+- 객체 생성 방식을 개발자가 자주 customizing 한다면 ⇒ `객체 생성 routine(factory)`를 `__init()__` 메서드의 매개변수로 전달받고 이를 `인스턴스 속성`으로 저장해라
+``` python
+# 예시
+class MyClass:
+    def __init__(self, factory):
+        self.factory = factory # 사용자가 빈번하게 정의할 수 있도록 인스턴스 속성으로 설정
 
+# 사용 예시
+custom_factory = CustomFactory() 
+obj = MyClass(factory=custom_factory) 
+```
+- customizing을 잘 하지 않는다면 ⇒ 해당 속성에 항상 접근하기 때문에 `객체 생성 routine`을 `클래스 속성`으로 만들어라.
+``` python
+class MyClass:
+    factory = DefaultFactory # 클래스 내부에서는 사용하지만
+                             # 외부로부터 정의되는 빈도수가 굉장히 적으니 클래스 속성으로 설정  
 
+# 드물게 사용자 정의가 필요할 경우
+obj = MyClass()
+obj.factory = CustomFactory() # 꼭 필요한 경우 이와 같이 사용자가 정의한 내용으로 설정 
+```
 
+## 모든 callable 사용 가능 
 
+앞선 예시에서 parse_float를 설정할 때 Decimal을 response_class를 SpecialHTTPResponse 클래스를 사용했었다.  
+하지만, 호출자는 앞서 언급한 클래스들이 `callable` 이었다는 것만 알고 있다는 걸 명심해야 한다. 
+
+행복하게도 Python에는 `new라는 키워드`가 없어서 객체 인스턴스화 작업이 마치 일반 함수 또는 메서도 호출처럼 보인다. 
+
+이는 parse_float, response_class와 같은 속성에 설정된 호출 가능한 객체들(callable)을 `함수`로 대체할 수 있다는 걸 의미한다. 
+
+ex. JSON Decoder에 다음과 같은 함수를 `parse_float` 매개변수에 전달할 수 있다. 
+``` python
+def parse_number(string):
+    if '.' in string:
+        return Decimal(string)
+    return int(string)
+```
+
+함수뿐만 아니라 다른 종류의 callable도 전달할 수 있다.  
+bound method, class method와 같은 부분 생성자, 부분 적용(partial application)과 같은 함수형 프로그래밍 기법을 사용하여 동적으로 생성한 호출 가능한 객체도 전달할 수 있다. 
+
+``` python
+from decimal import Context, ROUND_DOWN
+from functools import partial
+
+# Decimal 생성자에 특정 컨텍스트를 설정하여 부분 적용
+parse_number = partial(Decimal, context=Context(2, ROUND_DOWN))
+```
+
+Class attribute factory를 사용하던 Instance attribute factor를 사용하던지 간에 클래스를 제공하는 기능에만 제한하지 말고 이렇게 모든 callable을 제공할 수 있는 Python의 자유로움을 마음껏 즐기도록 하자. 
+
+## [Factory Method 자체에 대한 설명](https://python-patterns.guide/gang-of-four/factory-method/#implementing)
+
+Python에서는 위와 같은 방식을 사용하면 되기에 굳이 여기서 정리하지는 않았다. 
