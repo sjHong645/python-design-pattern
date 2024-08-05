@@ -100,10 +100,13 @@ class Logger(object):
     def __init__(self, file):
         self.file = file
 
+    # log 메서드에 file의 메소드 write, flush를 사용했다. 
     def log(self, message):
         self.file.write(message + '\n')
         self.file.flush()
 
+# 다른 거 필요없이 write, flush 메소드만 구현해줬다.
+# 물론, socket에 전송하기에 적합하게 구현했다.
 class FileLikeSocket:
     def __init__(self, sock):
         self.sock = sock
@@ -114,6 +117,9 @@ class FileLikeSocket:
     def flush(self):
         pass
 
+# 마찬가지로 
+# 다른 거 필요없이 write, flush 메소드만 구현해줬다.
+# 물론, syslog에 저장하기에 적합하게 구현했다.
 class FileLikeSyslog:
     def __init__(self, priority):
         self.priority = priority
@@ -128,12 +134,27 @@ class FileLikeSyslog:
 
 Python은 `덕 타이핑`을 지원한다. 때문에 어댑터는 적절한 메서드만 전달해주면 된다.  
 또한, 파일이 제공하는 모든 메소드를 다시 구현할 필요가 없다.  
-내가 필요한 게 `꽥(quack)`이더라도 `오리(duck)`가 걷는지는 중요하지 않은 것 처럼 어댑터는 Logger 클래스가 사용하는 2개의 파일 메서드만 구현하면 된다. 
+내가 필요한 게 `꽥(quack)`이라면 `오리(duck)`가 `걷는지는 중요하지 않은 것`처럼 어댑터는 Logger 클래스가 사용하는 2개의 파일 메서드만 구현하면 된다. 
 
 위 예시는 Logger 클래스가 log 명령어를 위해서 사용하는 `write`, `flush`만 다시 구현한 2개의 클래스를 볼 수 있었다. 
 
+이제 과다 하위 클래스 문제를 해결할 수 있다.  
+이제 추가적인 클래스 생성없이 Logger object 또는 adapter object를 자유롭게 섞어서 사용할 수 있다. 
 
+``` python
+sock1, sock2 = socket.socketpair()
 
+fs = FileLikeSocket(sock1) # 파일은 파일인데 socket에 전송하기에 더 적합하게 구현함 
+logger = FilteredLogger('Error', fs) # 어차피 write, flush가 구현되어 있으니 상관없음 (덕 타이핑) 
+logger.log('Warning: message number one')
+logger.log('Error: message number two')
+
+print('The socket received: %r' % sock2.recv(512))
+```
+
+## 2번째 해결책 : Bridge 패턴 
+
+브리지 패턴은 `호출자가 보는 추상 object`와 `안에 감싸져있는 구현 object`로 클래스의 행동을 나눈다.  
 
 
 
