@@ -154,7 +154,89 @@ print('The socket received: %r' % sock2.recv(512))
 
 ## 2번째 해결책 : Bridge 패턴 
 
-브리지 패턴은 `호출자가 보는 추상 object`와 `안에 감싸져있는 구현 object`로 클래스의 행동을 나눈다.  
+브리지 패턴은 `호출자가 볼 수 있는 추상 object`와 `안에 감싸져있는 구현 object`로 클래스의 행동을 나눈다.  
+
+브리지 패턴을 logging 예시에 적용해보려고 한다.  
+`필터링`은 `추상화 클래스`에 `출력`은 `구현 클래스`에 속한다고 가정하겠다. 
+
+어댑터 패턴의 경우와 마찬가지로 별도의 클래스 계층이 기록을 관리한다.  
+하지만, 어댑터 패턴은 출력 클래스를 파이썬 파일 객체의 인터페이스에 맞추기 위해 어색한 방식으로 조정해야 했다.  
+
+브리지 패턴은 감싸진 클래스의 인터페이스를 우리가 직접 정의할 수 있다. 
+
+ex. raw msg를 받기 위한 구현(implementation) 객체 부분
+
+기존에 구현했던 `flush()` 메서드는 대부분 아무런 동작을 하지 않기에  
+`emit()` 메서드 하나만 갖고 있는 인터페이스로 개수를 줄였다.  
+
+``` python
+# The “abstractions” that callers will see.
+class Logger(object):
+    def __init__(self, handler):
+        self.handler = handler
+
+    def log(self, message):
+        self.handler.emit(message)
+
+class FilteredLogger(Logger):
+    def __init__(self, pattern, handler):
+        self.pattern = pattern
+        super().__init__(handler)
+
+    def log(self, message):
+        if self.pattern in message:
+            super().log(message)
+
+# The “implementations” hidden behind the scenes.
+class FileHandler:
+    def __init__(self, file):
+        self.file = file
+
+    def emit(self, message):
+        self.file.write(message + '\n')
+        self.file.flush()
+
+class SocketHandler:
+    def __init__(self, sock):
+        self.sock = sock
+
+    def emit(self, message):
+        self.sock.sendall((message + '\n').encode('ascii'))
+
+class SyslogHandler:
+    def __init__(self, priority):
+        self.priority = priority
+
+    def emit(self, message):
+        syslog.syslog(self.priority, message)
+```
+
+`추상 객체`와 `구현 객체`는 이제 자유롭게 섞어서 쓸 수 있다. 
+
+``` python
+handler = FileHandler(sys.stdout) # 여러 가지 핸들러 중 파일핸들러 선택 
+logger = FilteredLogger('Error', handler) # 그 핸들러를 가지고 필터링된 로그 기록 출력 
+
+logger.log('Ignored: this will not be logged')
+logger.log('Error: this is important')
+```
+
+이 방식은 어댑터 패턴보다 대칭적인 구조를 제공한다. 
+
+파일 출력을 로거에 직접 구현하는 대신, 작동하는 로거가 항상 `추상화(abstraction)`와 `구현(implementation)`을 조합하여 구성된다. 
+
+이를 통해 과다 하위 클래스 생성을 막을 수 있었다. 크게 두 종류의 클래스를 조합하여 원하는 로거를 만들 수 있었기 때문이다. 
+
+## 3번째 해결책 : Decorator 패턴 
+
+
+
+
+
+
+
+
+
 
 
 
