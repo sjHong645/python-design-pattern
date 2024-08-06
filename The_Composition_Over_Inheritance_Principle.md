@@ -231,13 +231,78 @@ logger.log('Error: this is important')
 
 만약 똑같은 로그에 2개의 필터를 적용하고 싶다면? (ex. 특정 우선순위에 따라 필터링이후에 다른 우선순위에 따라 필터링) 앞선 두 개의 방식은 여러 개의 필터를 제공하지 못한다. 
 
-브리지 패턴을 이용해서 2개의 필터를 적용할 수 없다. 
+브리지 패턴을 보면 두 개의 필터를 적용할 수 없는 이유는  
+필터들은 `log()` 메소드를 제공하지만 핸들러는 `emit()` 메소드를 제공하는 비대칭성이 있기 때문이다. 
 
+만약 우리가 필터와 핸들러가 동일한 인터페이스를 적용하는 걸로 바꾼다면, Decorator 패턴을 구현하게 되는 것이다. 
 
+``` python
+# The loggers all perform real output.
+class FileLogger:
+    def __init__(self, file):
+        self.file = file
 
+    def log(self, message):
+        self.file.write(message + '\n')
+        self.file.flush()
 
+class SocketLogger:
+    def __init__(self, sock):
+        self.sock = sock
 
+    def log(self, message):
+        self.sock.sendall((message + '\n').encode('ascii'))
 
+class SyslogLogger:
+    def __init__(self, priority):
+        self.priority = priority
+
+    def log(self, message):
+        syslog.syslog(self.priority, message)
+
+# The filter calls the same method it offers.
+# 이제는 원하는 logger를 감쌀 수 있는 독립적인 기능이 되었다.
+class LogFilter:
+    def __init__(self, pattern, logger):
+        self.pattern = pattern
+        self.logger = logger
+
+    def log(self, message):
+        if self.pattern in message:
+            self.logger.log(message)
+```
+
+필터링은 특별히 조합한 클래스를 만들 필요 없이 출력값과 조합될 수 있다. 
+
+``` python
+log1 = FileLogger(sys.stdout)
+log2 = LogFilter('Error', log1)
+
+log1.log('Noisy: this logger always produces output')
+
+log2.log('Ignored: this will be filtered out')
+log2.log('Error: this is important and gets printed')
+
+# 출력 내용
+Noisy: this logger always produces output
+Error: this is important and gets printed
+```
+
+데코레이터 클래스는 대칭적이기 때문에 여러 개의 필터를 적용할 수 있다. 
+``` python
+log3 = LogFilter('severe', log2) # log2는 앞서 LogFilter를 할당한 변수 
+
+log3.log('Error: this is bad, but not that bad')
+log3.log('Error: this is pretty severe')
+
+# 출력 내용 
+Error: this is pretty severe
+```
+
+다만, 필터는 여러 개 적용할 수 있지만 출력값은 조합되거나 여러 개 적용할 수 없다.  
+로그 메시지는 여전히 하나의 출력 형식으로만 작성되어야 한다. 
+
+## 4번째 해결책 : GoF 방식에서 벗어난 방식 
 
 
 
