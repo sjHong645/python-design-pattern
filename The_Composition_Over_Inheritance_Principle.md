@@ -91,7 +91,9 @@ f.log('Error: but you want to see this')
 2. `FilteredLogger`도 유지하자
 3. 여기서, 목적지에 따라서 로거 클래스를 만드는 대신에 각각의 목적지를 파일의 동작 방식에 맞도록 적응(adapt)시킨 후 적응시킨 어댑터를 출력 파일로써 Logger에 전달한다.
 
-ex. 
+ex. 목적지인 Socket, Syslog를 Logger 클래스의 동작 방식에 맞도록 적응시킨 예시  
+
+- log 메서드가 사용하는 write, flush 메소드를 각 목적지에 적응시킨 어댑터에서 구현했다. 
 ``` python
 import socket
 
@@ -213,6 +215,7 @@ class SyslogHandler:
 
 `추상 객체`와 `구현 객체`는 이제 자유롭게 섞어서 쓸 수 있다. 
 
+아래 예시는 차례대로 `파일 핸들러`와 `필터링된 로거`를 선택했다. 
 ``` python
 handler = FileHandler(sys.stdout) # 여러 가지 핸들러 중 파일핸들러 선택 
 logger = FilteredLogger('Error', handler) # 그 핸들러를 가지고 필터링된 로그 기록 출력 
@@ -304,14 +307,63 @@ Error: this is pretty severe
 
 ## 4번째 해결책 : GoF 방식에서 벗어난 방식 
 
+Python의 logging 모듈은 보다 더 유연할 수 있다.  
+여러 개의 필터들을 적용하고 싶을 뿐만 아니라 한 번에 여러 개의 내용을 출력하고 싶다. 
 
+[다른 언어의 logging 모듈의 디자인](https://peps.python.org/pep-0282/#influences)에 기반해서 Python의 logging 모듈은 자기만의 `Composition Over Inheritance pattern`을 구현했다. 
 
+1. 호출자와 상호작용하는 `Logger 클래스`가 직접 필터링 또는 출력 내용을 구현하지 않는다. 대신에 필터 리스트, 핸들러 리스트를 관리한다. 
+2. 각각의 로그 메시지에서 `로거`가 `필터를 호출`한다. 필터가 로거를 거부하면 해당 로그 메시지는 출력되지 않는다.
+3. 필터링 된 로그 메시지에서 출력 핸들러를 하나씩 살펴보면서 각 핸들러의 `emit()` 메서드를 호출하도록 한다. 
 
+표준 로거의 기본적인 아이디어는 로거의 메시지들은 여러 개의 필터와 여러 개의 출력 형식을 가질 수 있다는 거다. 
 
+이 아이디어를 필터링 클래스와 핸들러 클래스를 분리하기 위해서 사용했다. 
 
+``` python 
+# There is now only one logger.
 
+class Logger:
+    def __init__(self, filters, handlers):
+        self.filters = filters
+        self.handlers = handlers
 
+    def log(self, message):
+        if all(f.match(message) for f in self.filters):
+            for h in self.handlers:
+                h.emit(message)
 
+# Filters now know only about strings!
 
+class TextFilter:
+    def __init__(self, pattern):
+        self.pattern = pattern
 
+    def match(self, text):
+        return self.pattern in text
+
+# Handlers look like “loggers” did in the previous solution.
+
+class FileHandler:
+    def __init__(self, file):
+        self.file = file
+
+    def emit(self, message):
+        self.file.write(message + '\n')
+        self.file.flush()
+
+class SocketHandler:
+    def __init__(self, sock):
+        self.sock = sock
+
+    def emit(self, message):
+        self.sock.sendall((message + '\n').encode('ascii'))
+
+class SyslogHandler:
+    def __init__(self, priority):
+        self.priority = priority
+
+    def emit(self, message):
+        syslog.syslog(self.priority, message)
+```
 
