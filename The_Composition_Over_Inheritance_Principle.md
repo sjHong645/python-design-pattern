@@ -316,25 +316,28 @@ Python의 logging 모듈은 보다 더 유연할 수 있다.
 2. 각각의 로그 메시지에서 `로거`가 `필터를 호출`한다. 필터가 로거를 거부하면 해당 로그 메시지는 출력되지 않는다.
 3. 필터링 된 로그 메시지에서 출력 핸들러를 하나씩 살펴보면서 각 핸들러의 `emit()` 메서드를 호출하도록 한다. 
 
-표준 로거의 기본적인 아이디어는 로거의 메시지들은 여러 개의 필터와 여러 개의 출력 형식을 가질 수 있다는 거다. 
+표준 로거의 기본적인 아이디어는 로거의 메시지들은 `여러 개의 필터`와 `여러 개의 출력 형식`을 가질 수 있다는 거다. 
 
 이 아이디어를 필터링 클래스와 핸들러 클래스를 분리하기 위해서 사용했다. 
 
 ``` python 
 # There is now only one logger.
-
 class Logger:
     def __init__(self, filters, handlers):
         self.filters = filters
         self.handlers = handlers
 
     def log(self, message):
+
+        # 로거에서 필터를 호출함. (self.filters)
+        # 해당 필터에서 message가 필터와 맞는지 확인 (f.match(message))
         if all(f.match(message) for f in self.filters):
+
+            # 필터링된 메시지를 Logger 객체를 호출할 때 지정한 핸들러에서 emit() 메소드를 이용해 저장
             for h in self.handlers:
                 h.emit(message)
 
-# Filters now know only about strings!
-
+# Filters now know only about strings! 더 이상 로그와 관련된 내용이 없다!!
 class TextFilter:
     def __init__(self, pattern):
         self.pattern = pattern
@@ -366,4 +369,33 @@ class SyslogHandler:
     def emit(self, message):
         syslog.syslog(self.priority, message)
 ```
+
+이와 같은 디자인을 이용하면 필터를 아주 단순하게 사용할 수 있다. 
+
+- 이전 디자인들 : logging 클래스 안에 필터를 감추거나 단순한 표현식 출력에 필터를 첨가하는 정도였다.
+- 현재 디자인 : 필터들은 오직 string을 입력받아 표현식(verdict)만 반환한다.
+
+무엇보다 `로그와 관련된 내용`이 필터와 완전히 `분리`되었다.  
+이제 TextFilter는 모든 상황에서 재사용할 수 있게 되었고 테스트 및 유지보수도 더 용이해졌다. 
+
+다시 `구성보다는 상속` 관점으로 보면 클래스들이 어떤 상속도 없이 구현되어 있는 걸 확인할 수 있다.
+
+``` python
+f = TextFilter('Error')
+h = FileHandler(sys.stdout)
+logger = Logger([f], [h])
+
+logger.log('Ignored: this will not be logged')
+logger.log('Error: this is important'
+
+>> 출력 : Error: this is important
+```
+
+여기서 중요한 내용은 각각의 패턴보다 `"구성보다는 상속" 원칙`이 더 중요하다는 것이다. 이 원칙을 반드시 준수하자. 
+리스트에 나와 있는 패턴을 준수해야 할 필요는 없다.  
+
+물론, 내가 처한 문제와 적합한 기존 디자인 패턴을 활용할 수도 있지만 그렇지 않다면  
+주어진 패턴에 얽매이지 않고 원칙을 따른 나의 디자인이 더 좋은 디자인이다. 
+
+
 
