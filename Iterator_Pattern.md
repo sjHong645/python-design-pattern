@@ -80,22 +80,51 @@ StopIteration
 
 이 과정은 앞서 `for 반복문`을 통해서 실행된 과정과 비슷해보인다는 걸 확인할 수 있다. 
 
-반복자 패턴을 공부하면서 드는 질문은 다음과 같다.  
-
+반복자 패턴을 공부하면서 다음과 같은 질문을 던져볼 수 있다. 
 - 왜 iterator는 container와 분리되어야 하는가?
 - 왜 각각의 container는 다음에 실행해야 할 객체가 뭔지 알려주는 counter를 포함하지 않을까?
 
+`하나의 counter`는 한 번에 하나의 for문이 컨테이너에서 동작할 때 효과가 있다.  
+하지만, 똑같은 container에서 한 번에 여러 개의 for문을 동작시켜야 하는 상황이 많이 발생한다. 
 
+ex. 
+``` python
+sides = ['heads', 'tails']
+for coin1 in sides:
+    for coin2 in sides:
+        print(coin1, coin2)
 
+heads heads
+heads tails
+tails heads
+tails tails
+```
 
+만약에 `sides`가 오직 하나의 counter만 갖고 있었다면,  
+`내부 loop`에서 모든 item을 반복했기 때문에 `외부 loop`에서는 더 이상 반복할 item이 없다. 
 
+대신에 `iter()` 메소드를 호출할 때마다 각각의 반복문이 주어진다. 
 
+``` python
+>>> it1 = iter(sides)
+>>> it2 = iter(sides)
+>>> it1
+<list_iterator object at 0x7fa8b8b292b0>
+>>> it2
+<list_iterator object at 0x7fa8b8b29400>
 
+>>> it1 is it2 # id값이 서로 다르다
+False
+```
 
+이처럼 여러가지 상황에서 동시에 여러 개의 for문을 사용해야 하는 상황이 많이 있다.  
+그래서 각각의 for문은 서로가 방해되지 않기 위해서 자기만의 iterator가 필요하다. 
 
+## 변형 : 자기 자신이 iterator인 객체
 
+ex. Python 파일 객체 
 
-
+for문을 통해 반복 작업을 진행할 때 해당 파일의 
 
 
 
