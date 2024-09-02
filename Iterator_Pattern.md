@@ -124,7 +124,73 @@ False
 
 ex. Python 파일 객체 
 
-for문을 통해 반복 작업을 진행할 때 해당 파일의 
+for문을 통해 반복 작업을 진행할 때 해당 파일의 line들을 yield한다. 
+
+하지만, 다른 자료구조와 달리 새로운 for문을 이용하여 순회할 때 맨 첫줄에서 반복문을 다시 시작하지 않는다.   
+파일에서 반복문이 마지막으로 실행되었던 위치를 기억해서 그 위치부터 line들을 yield한다. 
+
+ex. 파일 포맷 
+``` 
+From jdoe@machine.example Fri Nov 21 09:55:06 1997
+From: John Doe <jdoe@machine.example>
+To: Mary Smith <mary@example.net>
+Subject: Saying Hello
+Date: Fri, 21 Nov 1997 09:55:06 -0600
+
+This is a message just to say hello.
+So, "Hello".
+```
+``` python
+def parse_email(f):
+
+    # 파일의 첫 번째 줄을 envelope에 저장
+    for line in f:
+        envelope = line
+        break
+
+    # 파일의 두 번째 줄부터 반복문 시작
+    # `\n'(줄 바꿈) 나올 때까지 각 line에 대해 원하는 작업 수행
+    headers = {}
+    for line in f:
+        if line == '\n':
+            break
+        name, value = line.split(':', 1)
+        headers[name.strip()] = value.lstrip().rstrip('\n')
+
+    # 2번째 반복문이 끝난 부분부터 반복문 시작
+    # 'From'이 문장의 맨 앞 글자이면 멈춘다 
+    body = []
+    for line in f:
+        if line.startswith('From'):
+            break
+        body.append(line)
+    return envelope, headers, body
+```
+
+for문을 가지고 좀 더 얘기하기 전에 `iter()` 메서드를 호출해보자.
+
+``` python
+>>> f = open('email.txt')
+>>> f
+<_io.TextIOWrapper name='email.txt' mode='r' encoding='UTF-8'>
+>>> it1 = iter(f)
+>>> it1
+<_io.TextIOWrapper name='email.txt' mode='r' encoding='UTF-8'>
+>>> it2 = iter(f)
+>>> it2
+<_io.TextIOWrapper name='email.txt' mode='r' encoding='UTF-8'>
+>>> it1 is it2 is f
+True
+```
+
+
+
+
+
+
+
+
+
 
 
 
