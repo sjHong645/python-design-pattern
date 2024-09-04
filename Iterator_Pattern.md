@@ -1,3 +1,26 @@
+## 사전지식 : Iterable vs Iterator 
+
+- Iterable : container에 있는 항목(item)들을 하나씩 차례로 반환할 수 있는 object. 즉, 반복이 가능한 객체를 의미한다.   
+  ex) list, str, tuple
+``` python
+my_list = [1, 2, 3]  # 리스트는 iterable입니다.
+
+# 리스트에 대해 for 루프를 사용할 수 있다
+for item in my_list:
+    print(item)
+```
+- Iterator : iterable의 요소(item)들을 하나씩 반환하는 object. 더 이상 호출할 수 있는 데이터가 없다면 StopIteration 예외가 발생한다 
+
+``` python
+my_list = [1, 2, 3]  # 리스트는 iterable
+iterator = iter(my_list)  # iter()를 사용해 이터레이터를 생성
+
+print(next(iterator))  # 1
+print(next(iterator))  # 2
+print(next(iterator))  # 3
+# 다음 next 호출은 StopIteration 예외를 발생
+```
+
 ## 저자의 의견 
 
 Python은 프로그래밍 언어에서 사용할 수 있는 가장 기본적인 단계에서 반복자 패턴을 지원한다.  
@@ -263,6 +286,69 @@ Mary Smith <mary@example.net>
 ```
 
 ## Iterable과 Iterator 구현하기 
+
+어떻게 클래스가 반복자 패턴을 구현하고 Python 기본 반복 메커니즘인 `for`, `iter()`, `next()`에 연결할 수 있을까?
+
+- container는 반복자 객체를 반환하는 `__iter__()` 메서드를 제공해야 한다. 이 메서드를 구현함으로써 container는 `iterable`이 된다.
+- 각각의 반복자(iterator)는 `__next__()` 메서드를 제공해야 한다. `__next()__`는 호출될 때마다 container의 다음 항목을 반환한다. 더 이상 반환할 항목이 없다면 `StopIterator 에러`를 발생시킨다.
+- 앞서 다뤘던 특수한 경우 : `for문`에 기존의 container를 전달하지 않고 `iterator를 전달`하는 경우
+  - 이런 상황을 위해 각각의 반복자는 자기 자신을 간단하게 반환하기 위해 `__iter__()` 메서드를 제공해야 한다. 
+
+위와 같은 요구사항들이 어떻게 함께 동작하는지 간단한 반복자(iterator)를 구현해보면서 알아보자. 
+
+`__next__()` 메서드가 반환하는 항목들이 컨테이너 내부에 저장되어야 할 필요없다.  
+또한 `__next()__`가 호출될 때까지 해당 항목들이 존재할 필요없다. 
+
+즉, 컨테이너에 별도의 저장소를 구현하지 않아도 간단하게 iterator 패턴을 만들어낼 수 있다. 
+
+``` python
+class OddNumbers(object):
+    "An iterable object."
+
+    def __init__(self, maximum):
+        self.maximum = maximum
+
+    def __iter__(self):
+        return OddIterator(self)
+
+class OddIterator(object):
+    "An iterator."
+
+    def __init__(self, container):
+        self.container = container
+        self.n = -1
+
+    def __next__(self):
+        self.n += 2
+        if self.n > self.container.maximum:
+            raise StopIteration
+        return self.n
+
+    def __iter__(self):
+        return self
+```
+
+``` python
+numbers = OddNumbers(7) # 
+
+for n in numbers:
+    print(n)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
