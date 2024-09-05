@@ -328,19 +328,74 @@ class OddIterator(object):
         return self
 ```
 
-``` python
-numbers = OddNumbers(7) # 
+위와 같이 3개의 간단한 메서드(1개는 container 객체, 2개는 iterator 객체)를 통해 `OddNumbers 컨테이너`는 어엿한 Iterable 객체가 되었다. 당연히 for문에서 잘 동작한다. 
 
-for n in numbers:
+``` python
+numbers = OddNumbers(7) 
+
+for n in numbers: # numbers 객체 반복 시작
+                  # 해당 객체의 __iter__() 메서드를 호출했다. 여기서 iterator 객체를 반환받았다
+                  # 그 iterator의 __next()__ 메서드를 호출해서 동작을 실행한다. 
     print(n)
+
+1
+3
+5
+7
 ```
 
+내장 함수 `iter()`, `next()`를 사용해도 동작한다. 
 
+``` python
+it = iter(OddNumbers(5)) # OddNumbers(5) 객체를 만들었다.
+                         # 그 객체를 iter()에 전달해서 __iter()__를 호출했다.
+                         # 즉, OddNumbers(5).__iter()__의 반환값이 it에 저장되어 있다
+                         
+print(next(it)) # next() 메서드에 it를 전달함으로써 it.__next()__를 호출한다 
+print(next(it))
 
+1
+3
+```
 
+## Python의 추가 간접 계층(extra level of indirection) 
 
+왜 Python은 `iter()`, `next()` 메서드를 갖고 있을까? 
 
+일반적인 반복(iteration) 패턴은 대부분의 프로그래밍 언어에서 내장함수 없이 동작한다.  
+대신에, 이 패턴은 `container`가 `하나의 메서드를 구현`하고 `iterable 객체`가 `다른 메서드를 구현`하도록 함으로써 객체 동작의 직접 관여한다. 
 
+그렇다면, 왜 Python은 메서드의 이름을 직접 지정하고 `obj.method()` 표기법을 통해 직접 호출하도록 하지 않았을까? 
+
+그 이유는 Python이 기존의 반복(iteration) 메커니즘을 지원해야 했기 때문이다.
+
+원래 Python의 for문은 오직 정수 인덱스를 가진 container만 지원했다. 리스트, 튜플 같은 거.  
+즉, for문이 아래와 같이 동작한 거다 
+```
+>>> some_primes[0]
+2
+>>> some_primes[1]
+3
+>>> some_primes[2]
+5
+>>> some_primes[3]
+Traceback (most recent call last):
+  ...
+IndexError: list index out of range
+```
+
+[PEP-234](https://peps.python.org/pep-0234/)를 기반으로 Python2.2에 반복자 패턴이 합쳐지면서 문제가 생겼다. 
+
+만약, for문이 container의 `__iter__()`를 호출하면서 시작한다면 이전까지 만들어왔던 container에 무슨일이 벌어질까? 
+
+다행히도 컴퓨터 과학의 모든 문제는 다른 간접 계층(another level of indirection)을 통해 해결할 수 있다. 
+
+Python은 사용자와 언어가 기존 방식의 반복자 패턴과 객체 기반의 반복자 패턴을 둘 다 지원해야 하는 불행한 현실 사이에 한 쌍의 내부함수를 끼워넣기로 했다. 
+
+PEP는 말했다.   
+
+- for문은 이제 반복자 패턴을 우선으로 실행한다. 만약 container가 `__iter__()`를 제공하면 for문은 `__iter__()`가 반환하는 반복자(iterator)를 사용한다.
+- 옛날 container를 지원하기 위해 `
 
 
 
