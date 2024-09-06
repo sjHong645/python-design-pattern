@@ -7,7 +7,7 @@
 [Gang of Four Book](https://python-patterns.guide/gang-of-four/)에서 얘기한 2번째 원칙은 아래와 같다.  
 
 ```
-클래스 상속(Inheritance)보다 객체 조합(composition)을 더 선호할 것
+클래스 상속(Inheritance)보다 객체 구성(composition)을 더 선호할 것
 ```
 
 하나의 문제 상황을 예시로 들어서 이 원칙이 여러 개의 GoF 디자인 패턴을 통해 어떻게 구현되어 있는지 살펴보자.  
@@ -378,7 +378,7 @@ class SyslogHandler:
 무엇보다 `로그와 관련된 내용`이 필터와 완전히 `분리`되었다.  
 이제 TextFilter는 모든 상황에서 재사용할 수 있게 되었고 테스트 및 유지보수도 더 용이해졌다. 
 
-다시 `구성보다는 상속` 관점으로 보면 클래스들이 어떤 상속도 없이 구현되어 있는 걸 확인할 수 있다.
+다시 `상속보다는 구성` 관점으로 보면 클래스들이 어떤 상속도 없이 구현되어 있는 걸 확인할 수 있다.
 
 ``` python
 f = TextFilter('Error')
